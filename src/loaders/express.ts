@@ -24,9 +24,8 @@ var jwtCheck = jwt({
 });
 
 export default ({ app }: { app: express.Application }) => {
+  app.use(cors());  
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
-  app.use(cors({origin:"*"}));
-  
   app.get("/", (req: express.Request, res: express.Response) => {
     res.json({ message: "The app is up and running!" });
   });
