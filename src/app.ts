@@ -7,14 +7,15 @@ import express from "express";
 import { appLoader } from "./loaders";
 import { mainDatabaseStartConnection } from "./loaders";
 
-
 async function startServer() {
   const app = express();
+  app.get("/", function (req, res) {
+    res.send("working");
+  });
+
   appLoader({ app });
   await mainDatabaseStartConnection();
   const logger: Logger = Container.get("logger");
-
-
   app
     .listen(config.port, () => {
       logger.info(`

@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { ILocation } from "../interfaces/ILocation";
 
 const Location = new mongoose.Schema(
-  {
+  { symptoms: String,
     coordinate: {
         lat: String,
         lng: String

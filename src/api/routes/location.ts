@@ -7,7 +7,6 @@ import LocationService from "../../services/locationService";
 import { AuthRequest } from "../../types/express/request";
 import { locationValidator } from "../validators/location";
 import { sendHttpError } from "../errors";
-const { requiresAuth } = require("express-openid-connect");
 
 const route = Router();
 
@@ -22,7 +21,6 @@ export default (app: Router) => {
 
   route.get(
     "",
-    requiresAuth(),
     async (req: AuthRequest, res: Response, next: NextFunction) => {
       logger.debug("Calling get location endpoint");
       try {
@@ -97,13 +95,16 @@ export default (app: Router) => {
     "",
     celebrate({
       body: locationValidator,
+      query: Joi.object({
+        locationId: Joi.string().required(),
+      }),
     }),
     async (req: AuthRequest, res: Response, next: NextFunction) => {
       logger.debug("Calling update location endpoint with body: %o", req.body);
 
       try {
         const requestBody = req.body;
-
+        requestBody.user = req.user?.sub;
         const location = await locationService.update(
           requestBody as ILocationInputDTO,
           req.query.locationId as string
@@ -126,10 +127,10 @@ export default (app: Router) => {
 
       try {
         const requestBody = req.body;
+        requestBody.user = req.user?.sub;
         const location = await locationService.create(
           requestBody as ILocationInputDTO
         );
-
         return res.status(201).json({ location });
       } catch (e) {
         logger.error("🔥 error on calling update location endpoint: %o", e);

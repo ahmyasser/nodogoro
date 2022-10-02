@@ -1,33 +1,32 @@
-import express from 'express';
-import compression from 'compression'; // compresses requests
-import bodyParser from 'body-parser';
-import lusca from 'lusca';
-import config from '../config';
-import routes from '../api';
-import errorHandler from 'errorhandler';
-import cors from 'cors';
-import { swaggerUi, specs } from './swagger';
-const { requiresAuth } = require("express-openid-connect");
-const { auth } = require("express-openid-connect");
+import express from "express";
+import compression from "compression"; // compresses requests
+import bodyParser from "body-parser";
+import lusca from "lusca";
+import config from "../config";
+import routes from "../api";
+import errorHandler from "errorhandler";
+import cors from "cors";
+
+import { swaggerUi, specs } from "./swagger";
+var jwt = require("express-jwt");
+var jwks = require("jwks-rsa");
+
+var jwtCheck = jwt({
+  secret: jwks.expressJwtSecret({
+    cache: true,
+    rateLimit: true,
+    jwksRequestsPerMinute: 5,
+    jwksUri: `${config.domain}.well-known/jwks.json`,
+  }),
+  audience: config.audience,
+  issuer: config.domain,
+  algorithms: ["RS256"],
+});
 
 export default ({ app }: { app: express.Application }) => {
-  app.use(auth(config.Auth0));
-  
-  app.get("/profile", requiresAuth(), (req: any, res) => {
-    res.send(JSON.stringify(req.oidc.user));
-  });
-
-  /**
-   * Health Check endpoints
-   * @TODO Explain why they are here
-   */
-  app.get('/status', (req, res) => {
-    res.status(200).end();
-  });
-  app.head('/status', (req, res) => {
-    res.status(200).end();
-  });
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
+  app.use(cors());
+  app.use(jwtCheck);
 
   /**
    * Error Handler. Provides full stack - remove for production
@@ -37,21 +36,15 @@ export default ({ app }: { app: express.Application }) => {
   /**
    * Primary app routes.
    */
-  app.get('/', (req: express.Request, res: express.Response) => {
-    res.send('The app is up and running!');
+  app.get("/", (req: express.Request, res: express.Response) => {
+    res.json({ message: "The app is up and running!" });
   });
-
-  /**
-   * The magic package that prevents frontend developers going nuts
-   * Alternate description: Enable Cross Origin Resource Sharing to all origins by default
-   */
-  app.use(cors());
 
   // Express configuration
   app.use(compression());
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json());
-  app.use(lusca.xframe('SAMEORIGIN'));
+  app.use(lusca.xframe("SAMEORIGIN"));
   app.use(lusca.xssProtection(true));
 
   /**

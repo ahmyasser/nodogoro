@@ -1,10 +1,10 @@
 import { Joi } from "celebrate";
 
 export const locationValidator = Joi.object({
-  user: Joi.string(),
+  symptoms: Joi.string(),
   coordinate: Joi.object({
-    lng: Joi.string(),
-    lat: Joi.string(),
+    lng: Joi.number(),
+    lat: Joi.number(),
   }),
   temp: Joi.number(),
 })
